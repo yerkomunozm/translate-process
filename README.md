@@ -9,7 +9,7 @@ Dos scripts en Python para preparar y traducir subtítulos:
 
 - Python 3.8+
 - Sin dependencias externas (solo librería estándar).
-- Para `translate_csv.py`: una API key de OpenAI en la variable de entorno `OPENAI_API_KEY`.
+- Para `translate_csv.py`: una API key de OpenAI en `OPENAI_API_KEY`, definida en el archivo `.env` (ver más abajo) o como variable de entorno.
 
 ## Flujo
 
@@ -69,9 +69,20 @@ CSV codificado en UTF-8 con BOM (`utf-8-sig`) para que Excel muestre bien tildes
 Toma el CSV (`segment_no`, `source_en`), envía los segmentos a un modelo de OpenAI y escribe un CSV con la traducción.
 
 ```bash
-export OPENAI_API_KEY=sk-...
 python3 translate_csv.py -i output/TheWire_S1E1.csv -o output/TheWire_S1E1_es.csv
 ```
+
+La configuración se lee del archivo `.env` (junto al script). `.env` está en `.gitignore`, así que no se sube al repositorio.
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `OPENAI_API_KEY` | Sí | API key de OpenAI (`sk-...`) |
+| `OPENAI_MODEL` | No | Modelo a usar (default: `gpt-4o`) |
+| `OPENAI_BASE_URL` | No | URL base de la API (default: `https://api.openai.com/v1`); solo para proxies o endpoints compatibles |
+| `SOURCE_LANG` | No | Idioma origen (default: `inglés estadounidense`) |
+| `TARGET_LANG` | No | Idioma destino (default: `español de Chile (es-CL)`) |
+
+Precedencia: argumento de línea de comandos > variable ya definida en el entorno > `.env` > valor por defecto.
 
 Para probar con pocos segmentos antes de gastar en el archivo completo:
 
@@ -83,8 +94,10 @@ python3 translate_csv.py -i output/TheWire_S1E1.csv -o output/prueba.csv --limit
 |---|---|
 | `-i`, `--input` | CSV de entrada (obligatorio) |
 | `-o`, `--output` | CSV de salida (obligatorio) |
+| `--source-lang` | Idioma origen (env `SOURCE_LANG`; default: `inglés estadounidense`) |
+| `--target-lang` | Idioma destino (env `TARGET_LANG`; default: `español de Chile (es-CL)`) |
 | `--source-col` | Columna a traducir (default: `source_en`) |
-| `--model` | Modelo de OpenAI (default: `gpt-4o`) |
+| `--model` | Modelo de OpenAI (env `OPENAI_MODEL`; default: `gpt-4o`) |
 | `--batch-size` | Segmentos por llamada (default: 30) |
 | `--context` | Segmentos previos ya traducidos que se envían como contexto (default: 5) |
 | `--lookahead` | Textos en inglés de los segmentos siguientes que se envían como contexto (default: 3) |
@@ -93,7 +106,7 @@ python3 translate_csv.py -i output/TheWire_S1E1.csv -o output/prueba.csv --limit
 
 ### Cómo funciona
 
-- **Prompt**: el system prompt está en la constante `SYSTEM_PROMPT` del script. Define al modelo como traductor de subtítulos EN → es-CL, con reglas de fidelidad, variante chilena, formato de subtitulado (máx. 2 líneas de 42 caracteres, formato pirámide, diálogos con `- `) y manejo de etiquetas. Edítalo ahí para cambiar el comportamiento.
+- **Prompt**: el system prompt está en la constante `SYSTEM_PROMPT` del script. Define al modelo como traductor de subtítulos del idioma origen al destino (`--source-lang`/`--target-lang`, por defecto EN → es-CL), con reglas de fidelidad, variante lingüística, formato de subtitulado (máx. 2 líneas de 42 caracteres, formato pirámide, diálogos con `- `) y manejo de etiquetas. Edítalo ahí para cambiar el comportamiento.
 - **Respuesta estructurada**: se pide JSON con esquema estricto y se valida que vuelvan exactamente los mismos `id` del lote. Si no coinciden, se repite el lote hasta 3 veces.
 - **Reintentos**: ante errores 429, 5xx o de red se reintenta con espera creciente.
 - **Reanudación**: el CSV de salida se guarda después de cada lote. Si el proceso se interrumpe, al ejecutarlo de nuevo con el mismo `-o` se omiten los segmentos ya traducidos.
@@ -110,6 +123,8 @@ CSV en UTF-8 con BOM con las columnas `segment_no`, `source_en` y `target`. Los 
 .
 ├── docx_to_csv.py     # DOCX → CSV
 ├── translate_csv.py   # CSV → CSV traducido (OpenAI)
+├── .env               # OPENAI_API_KEY (ignorado por git)
+├── .gitignore
 ├── input/             # DOCX de entrada
 └── output/            # CSV generados
 ```

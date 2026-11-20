@@ -102,6 +102,7 @@ python3 translate_csv.py -i output/TheWire_S1E1.csv -o output/prueba.csv --limit
 | `--context` | Segmentos previos ya traducidos que se envían como contexto (default: 5) |
 | `--lookahead` | Textos en inglés de los segmentos siguientes que se envían como contexto (default: 3) |
 | `--instructions` | Instrucciones extra que se agregan al prompt (glosario, tono, etc.) |
+| `--json-output` | Ruta del JSON de salida (default: `json/<nombre del CSV de salida>.json`) |
 | `--limit` | Traduce solo los primeros N segmentos (pruebas) |
 
 ### Cómo funciona
@@ -117,6 +118,31 @@ python3 translate_csv.py -i output/TheWire_S1E1.csv -o output/prueba.csv --limit
 
 CSV en UTF-8 con BOM con las columnas `segment_no`, `source_en` y `target`. Los saltos de línea dentro de una traducción se conservan.
 
+Además se escribe un JSON en `json/<nombre del CSV de salida>.json` (por ejemplo, `-o output/X_es.csv` genera `json/X_es.json`). Se actualiza después de cada lote, igual que el CSV:
+
+```json
+{
+  "document_title": "X · 377 segmentos · traducción es-CL",
+  "source_artifact": "X.csv",
+  "language": "es-CL",
+  "range": [1, 377],
+  "segment_count": 377,
+  "confirmed_by_script": false,
+  "segments": [
+    {
+      "id": 1,
+      "source": "Valparaíso is Wild.",
+      "original": "Valparaíso es salvaje.",
+      "review": "Valparaíso es salvaje.",
+      "status": "unchanged"
+    }
+  ]
+}
+```
+
+- `original` es la salida del modelo. `review` arranca como copia de `original` y `status` queda en `"unchanged"`; el script no hace revisión automática.
+- `language` se toma del paréntesis de `--target-lang` (por ejemplo, `es-CL`).
+
 ## Estructura
 
 ```
@@ -126,5 +152,6 @@ CSV en UTF-8 con BOM con las columnas `segment_no`, `source_en` y `target`. Los 
 ├── .env               # OPENAI_API_KEY (ignorado por git)
 ├── .gitignore
 ├── input/             # DOCX de entrada
-└── output/            # CSV generados
+├── output/            # CSV generados
+└── json/              # JSON de traducción
 ```

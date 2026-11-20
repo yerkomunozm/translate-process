@@ -19,6 +19,29 @@ input/*.docx  ──docx_to_csv.py──▶  output/X.csv  ──translate_csv.p
 
 ---
 
+## Ejecución completa: pipeline.py
+
+Corre los dos scripts en cadena (DOCX → CSV → traducción + JSON) con un solo comando:
+
+```bash
+python3 pipeline.py -i input/episodio.docx
+python3 pipeline.py -i input/                 # todos los .docx de la carpeta
+python3 pipeline.py -i input/ --limit 5       # prueba con pocos segmentos
+```
+
+Por cada DOCX (nombre base = nombre del DOCX sin extensión) genera `output/<base>.csv`, `output/<base>_es.csv` y `json/<base>_es.json`.
+
+| Parámetro | Descripción |
+|---|---|
+| `-i`, `--input` | Uno o más `.docx`, o carpetas con `.docx` (obligatorio) |
+| `--output-dir` | Carpeta de los CSV (default: `output/`) |
+| `--json-dir` | Carpeta de los JSON (default: `json/`) |
+| `--skip-extract` | No regenera el CSV de extracción si ya existe |
+
+Cualquier otra opción se pasa tal cual a `translate_csv.py` (`--model`, `--batch-size`, `--target-lang`, `--instructions`, `--limit`, ...). Si un archivo falla, sigue con el siguiente y al final lista los fallidos; el código de salida es 1 si hubo alguno. Para reanudar una traducción interrumpida, vuelve a ejecutar el mismo comando.
+
+---
+
 ## 1. docx_to_csv.py
 
 ```bash
@@ -149,6 +172,7 @@ Además se escribe un JSON en `json/<nombre del CSV de salida>.json` (por ejempl
 .
 ├── docx_to_csv.py     # DOCX → CSV
 ├── translate_csv.py   # CSV → CSV traducido (OpenAI)
+├── pipeline.py        # orquesta ambos scripts
 ├── .env               # OPENAI_API_KEY (ignorado por git)
 ├── .gitignore
 ├── input/             # DOCX de entrada
